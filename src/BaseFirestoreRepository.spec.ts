@@ -406,6 +406,12 @@ describe('BaseRepository', () => {
       expect(albums.length).to.eql(3);
     });
 
+    it('must filter with substring', async () => {
+      const list = await bandRepository
+        .filterBySubstring('name', '21');
+      expect(list.length).to.equal(1);
+    });
+
     it('should be able to update subcollections', async () => {
       const pt = await bandRepository.findById('porcupine-tree');
       const album = await pt.albums.findById('fear-blank-planet');

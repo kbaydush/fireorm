@@ -10,6 +10,7 @@ export interface IRepository<T extends { id: string }> {
   create(item: T): Promise<T>;
   update(item: T): Promise<T>;
   delete(id: string): Promise<void>;
+  filterBySubstring(prop: string, val: string): Promise<T[]>;
 }
 
 export type IFirestoreVal = string | number | Date | Boolean;
