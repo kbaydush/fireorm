@@ -6,37 +6,37 @@ import { Type } from './';
 import { MetadataStorage } from './MetadataStorage';
 const MockFirebase = require('mock-cloud-firestore');
 
-describe('BaseRepository', () => {
-  const store = { metadataStorage: new MetadataStorage() };
-  Initialize(null, store);
+const store = { metadataStorage: new MetadataStorage() };
+Initialize(null, store);
 
-  @Collection('bands')
-  class Band {
-    id: string;
-    name: string;
-    formationYear: number;
-    lastShow: Date;
+@Collection('bands')
+class Band {
+  id: string;
+  name: string;
+  formationYear: number;
+  lastShow: Date;
 
-    // Todo create fireorm bypass decorator
-    @Type(() => Coordinates)
-    lastShowCoordinates: Coordinates;
-    genres: Array<string>;
+  // Todo create fireorm bypass decorator
+  @Type(() => Coordinates)
+  lastShowCoordinates: Coordinates;
+  genres: Array<string>;
 
-    @SubCollection(Album)
-    albums?: ISubCollection<Album>;
+  @SubCollection(Album)
+  albums?: ISubCollection<Album>;
 
-    getLastShowYear() {
-      return this.lastShow.getFullYear();
-    }
-
-    getPopularGenre() {
-      return this.genres[0];
-    }
+  getLastShowYear() {
+    return this.lastShow.getFullYear();
   }
 
-  class BandRepository extends BaseFirestoreRepository<Band> {}
+  getPopularGenre() {
+    return this.genres[0];
+  }
+}
 
-  let bandRepository: BaseFirestoreRepository<Band> | null = null;
+class BandRepository extends BaseFirestoreRepository<Band> {}
+
+describe('BaseRepository', () => {
+  let bandRepository: BaseFirestoreRepository<Band> = null;
 
   beforeEach(() => {
     const fixture = Object.assign({}, getFixture());
@@ -79,7 +79,12 @@ describe('BaseRepository', () => {
     });
 
     it('must throw an exception if limit call more than once', async () => {
-      expect(() => bandRepository.limit(2).limit(2).find()).to.throw();
+      expect(() =>
+        bandRepository
+          .limit(2)
+          .limit(2)
+          .find()
+      ).to.throw();
     });
   });
 
@@ -415,6 +420,16 @@ describe('BaseRepository', () => {
 
       const updatedAlbum = await pt.albums.findById('fear-blank-planet');
       expect(updatedAlbum.comment).to.eql('Anesthethize is top 3 IMHO');
+    });
+
+    it('should be able to update collections with subcollections', async () => {
+      const pt = await bandRepository.findById('porcupine-tree');
+      pt.name = 'Porcupine Tree IS THE BEST';
+      const updatedPt = await bandRepository.update(pt);
+      const foundUpdatedPt = await bandRepository.update(pt);
+
+      expect(updatedPt.name).to.eql(pt.name);
+      expect(foundUpdatedPt.name).to.eql(pt.name);
     });
 
     it('should be able to delete subcollections', async () => {

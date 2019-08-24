@@ -89,7 +89,7 @@ export default class BaseFirestoreRepository<T extends IEntity>
   private initializeSubCollections = (entity: T) => {
     this.subColMetadata.forEach(subCol => {
       Object.assign(entity, {
-        [subCol.name]: GetRepository(
+        [subCol.propertyKey]: GetRepository(
           subCol.entity as any,
           entity.id,
           subCol.name
@@ -136,8 +136,10 @@ export default class BaseFirestoreRepository<T extends IEntity>
     return obj;
   };
 
-  // TODO: have a smarter way to do this
-  private toObject = (obj: T): Object => {
+  private toSerializableObject = (obj: T): Object => {
+    this.subColMetadata.forEach(scm => {
+      delete obj[scm.propertyKey];
+    });
     return { ...obj };
   };
 
@@ -158,13 +160,15 @@ export default class BaseFirestoreRepository<T extends IEntity>
       }
     }
 
-    const doc = this.firestoreColRef.doc(item.id || undefined);
+    const doc = item.id
+      ? this.firestoreColRef.doc(item.id)
+      : this.firestoreColRef.doc();
 
     if (!item.id) {
       item.id = doc.id;
     }
 
-    await doc.set(this.toObject(item));
+    await doc.set(this.toSerializableObject(item));
 
     if (this.collectionType === FirestoreCollectionType.collection) {
       this.initializeSubCollections(item);
@@ -175,7 +179,9 @@ export default class BaseFirestoreRepository<T extends IEntity>
 
   async update(item: T): Promise<T> {
     // TODO: handle errors
-    await this.firestoreColRef.doc(item.id).update(this.toObject(item));
+    await this.firestoreColRef
+      .doc(item.id)
+      .update(this.toSerializableObject(item));
     return item;
   }
 
